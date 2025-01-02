@@ -105,6 +105,7 @@ func (h *sealHandler) UpdateSeal(e *core.RequestEvent) error {
 
 func (h *sealHandler) CreateNewSeal(e *core.RequestEvent) error {
 	newSeal := seal.SealAdd{}
+	insertedSeal := seal.Seal{}
 
 	if err := e.BindBody(&newSeal); err != nil {
 		errResponse := genericresponse.GenericErrorResponse{Error: err, ResponseMessage: "Failed reading request body", ResponseCode: 400}
@@ -118,14 +119,14 @@ func (h *sealHandler) CreateNewSeal(e *core.RequestEvent) error {
 		return e.JSON(http.StatusBadRequest, errResponse)
 	}
 
-	_, err := h.db.DB().NewQuery("INSERT INTO seals(name, color, gender, weight, age, dob) VALUES({:name}, {:color}, {:gender}, {:weight}, {:age}, {:dob})").Bind(dbx.Params{
+	err := h.db.DB().NewQuery("INSERT INTO seals(name, color, gender, weight, age, dob) VALUES({:name}, {:color}, {:gender}, {:weight}, {:age}, {:dob}) RETURNING id, name, color, gender, weight, age, dob;").Bind(dbx.Params{
 		"name":   newSeal.Name,
 		"color":  newSeal.Color,
 		"gender": newSeal.Gender,
 		"weight": newSeal.Weight,
 		"age":    newSeal.Age,
 		"dob":    newSeal.Dob,
-	}).Execute()
+	}).One(&insertedSeal)
 
 	if err != nil {
 		log.Print(err)
@@ -133,7 +134,7 @@ func (h *sealHandler) CreateNewSeal(e *core.RequestEvent) error {
 		return e.JSON(http.StatusInternalServerError, errResponse)
 	}
 
-	response := genericresponse.GenericResponse{Data: newSeal, ResponseMessage: "Success", ResponseCode: 200}
+	response := genericresponse.GenericResponse{Data: insertedSeal, ResponseMessage: "Success", ResponseCode: 200}
 	return e.JSON(http.StatusOK, response)
 
 }
