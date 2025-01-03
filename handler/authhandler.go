@@ -9,6 +9,7 @@ import (
 	"pocketbase-seal/model/genericresponse"
 	"time"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
@@ -29,12 +30,12 @@ func (h *authHandler) RegisterNewUser(e *core.RequestEvent) error {
 
 	user := auth.RegisterInput{}
 	getUser := auth.User{}
+	validate := validator.New()
 
 	if err := e.BindBody(&user); err != nil {
 		errResponse := genericresponse.GenericErrorResponse{Error: err, ResponseMessage: "Failed reading request body", ResponseCode: 400}
 		return e.JSON(http.StatusBadRequest, errResponse)
 	}
-
 	empty := helper.CheckEmptyStruct(user)
 
 	if empty {
@@ -50,6 +51,12 @@ func (h *authHandler) RegisterNewUser(e *core.RequestEvent) error {
 	h.db.DB().NewQuery("SELECT email FROM actors WHERE email = {:email}").Bind(dbx.Params{
 		"email": user.Email,
 	}).One(&getUser)
+
+	if err := validate.Var(user.Email, "email"); err != nil {
+		log.Print(err)
+		errResponse := genericresponse.GenericErrorResponse{ResponseMessage: "Invalid Email", ResponseCode: 400}
+		return e.JSON(http.StatusBadRequest, errResponse)
+	}
 
 	if getUser.Email == user.Email {
 		errResponse := genericresponse.GenericErrorResponse{ResponseMessage: "Email already exists", ResponseCode: 400}

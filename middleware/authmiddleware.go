@@ -1,7 +1,9 @@
 package middleware
 
 import (
+	"log"
 	"net/http"
+	"pocketbase-seal/helper"
 	"pocketbase-seal/model/genericresponse"
 
 	"github.com/pocketbase/pocketbase/core"
@@ -14,6 +16,13 @@ func InitAuthMiddleware(se *router.RouterGroup[*core.RequestEvent]) {
 			errResponse := genericresponse.GenericErrorResponse{ResponseMessage: "Missing auth token", ResponseCode: 400}
 			return e.JSON(http.StatusBadRequest, errResponse)
 		}
+
+		if err := helper.VerifyAuth(e.Request.Header.Get("Authorization")); err != nil {
+			log.Print(err)
+			errResponse := genericresponse.GenericErrorResponse{ResponseMessage: "Error parsing token", ResponseCode: 400}
+			return e.JSON(http.StatusBadRequest, errResponse)
+		}
+
 		return e.Next()
 	})
 }
