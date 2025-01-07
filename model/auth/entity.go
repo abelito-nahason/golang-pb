@@ -5,3 +5,7 @@ type User struct {
 	Password string `json:"password"`
 	Role     string `json:"role"`
 }
+
+type RoleRoute struct {
+	Accessible bool `json:"accessible"`
+}

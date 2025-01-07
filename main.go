@@ -29,7 +29,7 @@ func main() {
 		authGroup.POST("/login", authHandler.LoginUser)
 
 		apiGroup := se.Router.Group("/api")
-		middleware.InitAuthMiddleware(apiGroup)
+		middleware.InitAuthMiddleware(apiGroup, app)
 
 		sealGroup := apiGroup.Group("/seal")
 		sealHandler := handler.NewSealHandler(app)

@@ -1,7 +1,6 @@
 package helper
 
 import (
-	"fmt"
 	"os"
 	"strings"
 
@@ -14,7 +13,7 @@ type UserClaims struct {
 	jwt.RegisteredClaims
 }
 
-func VerifyAuth(tokenString string) error {
+func VerifyAuth(tokenString string) (*UserClaims, error) {
 	secretKey := os.Getenv("SECRET_KEY")
 	trimBearer := strings.TrimPrefix(tokenString, "Bearer ")
 	token, err := jwt.ParseWithClaims(trimBearer, &UserClaims{}, func(token *jwt.Token) (interface{}, error) {
@@ -22,12 +21,11 @@ func VerifyAuth(tokenString string) error {
 	})
 
 	if err != nil {
-		return err
+		return nil, err
+	} else if claims, ok := token.Claims.(*UserClaims); ok && token.Valid {
+		return claims, nil
+	} else {
+		return nil, nil
 	}
 
-	if !token.Valid {
-		return fmt.Errorf("invalid token")
-	}
-
-	return nil
 }
